@@ -1,0 +1,121 @@
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JOptionPane;
+
+public class Gato01 {
+
+    public static void main(String[] args) {
+        Gato02 ventana = new Gato02();
+        ventana.setVisible(true);
+    }
+}
+
+class Gato02 extends JFrame implements ActionListener {
+
+    JButton botones[] = new JButton[9];
+    boolean turnoX = true;
+    Font fuente = new Font("Arial", Font.BOLD, 50);
+    JButton btnReiniciar;
+    JPanel panelJuego, panelOpciones;
+
+    public Gato02() {
+
+        setSize(400, 400);
+        setTitle("Juego Gato");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        panelJuego = new JPanel(new GridLayout(3, 3));
+        panelOpciones = new JPanel();
+
+        for (int i = 0; i < botones.length; i++) {
+            botones[i] = new JButton("");
+            botones[i].setFont(fuente);
+            botones[i].addActionListener(this);
+            panelJuego.add(botones[i]);
+        }
+
+        btnReiniciar = new JButton("Reiniciar Juego");
+
+        btnReiniciar.addActionListener(e -> reiniciarJuego());
+
+        panelOpciones.add(btnReiniciar);
+
+        add(panelJuego, BorderLayout.CENTER);
+        add(panelOpciones, BorderLayout.SOUTH);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+        JButton botonPresionado = (JButton) e.getSource();
+
+        if (turnoX) {
+            botonPresionado.setText("X");
+        } else {
+            botonPresionado.setText("O");
+        }
+
+        botonPresionado.setEnabled(false);
+
+        if (verificarGanador()) {
+            JOptionPane.showMessageDialog(this,
+                    "Ganó " + botonPresionado.getText());
+            bloquearTablero();
+        } else if (verificarEmpate()) {
+            JOptionPane.showMessageDialog(this,
+                    "Empate");
+        }
+
+        turnoX = !turnoX;
+    }
+
+    private boolean verificarGanador() {
+
+        int[][] combinaciones = {
+            {0,1,2},{3,4,5},{6,7,8}, // filas
+            {0,3,6},{1,4,7},{2,5,8}, // columnas
+            {0,4,8},{2,4,6}          // diagonales
+        };
+
+        for (int[] c : combinaciones) {
+            String b1 = botones[c[0]].getText();
+            String b2 = botones[c[1]].getText();
+            String b3 = botones[c[2]].getText();
+
+            if (!b1.equals("") && b1.equals(b2) && b2.equals(b3)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean verificarEmpate() {
+        for (int i = 0; i < botones.length; i++) {
+            if (botones[i].getText().equals("")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void bloquearTablero() {
+        for (int i = 0; i < botones.length; i++) {
+            botones[i].setEnabled(false);
+        }
+    }
+
+    private void reiniciarJuego() {
+        for (int i = 0; i < botones.length; i++) {
+            botones[i].setText("");
+            botones[i].setEnabled(true);
+        }
+        turnoX = true;
+    }
+}
