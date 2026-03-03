@@ -1,0 +1,51 @@
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+public class Edad extends JFrame implements ActionListener{
+    JTextField edad;
+    JButton btnOperar;
+    JPanel panel01;
+   
+    public Edad(){
+        setTitle("Mayoria de Edad");
+        setSize(400,200);
+        setDefaultCloseOperation(3);
+               
+        edad = new JTextField(5);
+        
+        btnOperar = new JButton("Comprobar");
+        btnOperar.addActionListener(this);
+       
+        panel01 = new JPanel();
+       
+        panel01.add(edad);
+        panel01.add(btnOperar);
+       
+       
+       
+        add(panel01);
+        setVisible(true);
+    }
+   
+    public static void main(String[] args) {
+        Edad v1 = new Edad();        
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String n1 = edad.getText();
+       
+        int edad = Integer.parseInt(n1);
+       
+        if(edad>=18){
+            JOptionPane.showMessageDialog(null, edad +" cuenta como mayor de edad");
+        }else{
+            JOptionPane.showMessageDialog(null, edad +" cuenta como menor de edad");
+        }
+     }
+}
