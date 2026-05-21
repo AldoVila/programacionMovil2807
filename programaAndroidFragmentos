@@ -1,0 +1,192 @@
+1. Main Activity
+package com.example.fragmentos;
+
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+public class MainActivity extends Activity {
+
+    ListView lista;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        lista = findViewById(R.id.listaAnimales);
+
+        String[] animales = {"Gato", "Perro", "Vaca"};
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                animales
+        );
+
+        lista.setAdapter(adapter);
+
+        // Fragmento inicial
+        reemplazarFragmento(new FragmentoGato());
+
+        lista.setOnItemClickListener((parent, view, position, id) -> {
+
+            switch (position){
+
+                case 0:
+                    reemplazarFragmento(new FragmentoGato());
+                    break;
+
+                case 1:
+                    reemplazarFragmento(new FragmentoPerro());
+                    break;
+
+                case 2:
+                    reemplazarFragmento(new FragmentoVaca());
+                    break;
+            }
+
+        });
+    }
+
+    public void reemplazarFragmento(Fragment fragmento){
+
+        FragmentManager fragmentManager = getFragmentManager();
+
+        fragmentManager.beginTransaction()
+                .replace(R.id.contenedorFragmentos, fragmento)
+                .commit();
+    }
+}
+
+2.Fragmento Gato
+package com.example.fragmentos;
+
+import android.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class FragmentoGato extends Fragment {
+
+    @Override
+    public View onCreateView(LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        return inflater.inflate(R.layout.fragmento_gato, container, false);
+    }
+}
+
+3. Fragmento Perro
+package com.example.fragmentos;
+
+import android.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class FragmentoPerro extends Fragment {
+
+    @Override
+    public View onCreateView(LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        return inflater.inflate(R.layout.fragmento_perro, container, false);
+    }
+}
+
+4. Fragmento Vaca
+package com.example.fragmentos;
+
+import android.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class FragmentoVaca extends Fragment {
+
+    @Override
+    public View onCreateView(LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        return inflater.inflate(R.layout.fragmento_vaca, container, false);
+    }
+}
+
+5. XML Main Activity
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <ListView
+        android:id="@+id/listaAnimales"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"/>
+
+    <FrameLayout
+        android:id="@+id/contenedorFragmentos"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</LinearLayout>
+
+6. XML Gato
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:src="@drawable/gato"/>
+
+</LinearLayout>
+
+7. XML Perro
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:src="@drawable/perro"/>
+
+</LinearLayout>
+
+8. XML Vaca
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:src="@drawable/vaca"/>
+
+</LinearLayout>
