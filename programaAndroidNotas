@@ -1,0 +1,265 @@
+1. Main Activity
+package com.notas.app
+
+import android.os.Bundle
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var adapter: NoteAdapter
+    private var selectedNote: Note? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val title = findViewById<EditText>(R.id.titleInput)
+        val content = findViewById<EditText>(R.id.contentInput)
+
+        val btnSave = findViewById<Button>(R.id.btnSave)
+        val btnDelete = findViewById<Button>(R.id.btnDelete)
+        val btnExportInternal = findViewById<Button>(R.id.btnExportInternal)
+        val btnExportExternal = findViewById<Button>(R.id.btnExportExternal)
+        val btnExportDownloads = findViewById<Button>(R.id.btnExportDownloads)
+
+        val recycler = findViewById<RecyclerView>(R.id.recycler)
+
+        recycler.layoutManager = LinearLayoutManager(this)
+
+        adapter = NoteAdapter(emptyList()) { note: Note ->
+            selectedNote = note
+            Toast.makeText(this, "Seleccionada: ${note.title}", Toast.LENGTH_SHORT).show()
+        }
+
+        recycler.adapter = adapter
+
+        fun refresh() {
+            val notes = FileManager.getNotes(this)
+            adapter.updateList(notes)
+        }
+
+        btnSave.setOnClickListener {
+            val note = Note(title.text.toString(), content.text.toString())
+
+            FileManager.saveInternal(this, note)
+            refresh()
+
+            title.text.clear()
+            content.text.clear()
+        }
+
+        btnDelete.setOnClickListener {
+            selectedNote?.let {
+                FileManager.delete(this, it)
+                selectedNote = null
+                refresh()
+            }
+        }
+
+        btnExportInternal.setOnClickListener {
+            selectedNote?.let {
+                FileManager.saveInternal(this, it)
+                Toast.makeText(this, "Guardado interno", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnExportExternal.setOnClickListener {
+            selectedNote?.let {
+                FileManager.saveExternalApp(this, it)
+                Toast.makeText(this, "Guardado externo", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnExportDownloads.setOnClickListener {
+            selectedNote?.let {
+                FileManager.exportToDownloads(this, it)
+                Toast.makeText(this, "Exportado a Downloads", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        refresh()
+    }
+}
+
+2. Note
+package com.notas.app
+
+data class Note(
+    val title: String,
+    val content: String
+)
+
+3. Note Adapter
+package com.notas.app
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+class NoteAdapter(
+    private var notes: List<Note>,
+    private val onSelect: (Note) -> Unit
+) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
+
+    private var selectedPosition = -1
+
+    class NoteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val title: TextView = view.findViewById(R.id.titleText)
+        val content: TextView = view.findViewById(R.id.contentText)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_note, parent, false)
+        return NoteViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
+        val note = notes[position]
+
+        holder.title.text = note.title
+        holder.content.text = note.content
+
+        holder.itemView.isSelected = position == selectedPosition
+
+        holder.itemView.setOnClickListener {
+            selectedPosition = position
+            notifyDataSetChanged()
+            onSelect(note)
+        }
+    }
+
+    override fun getItemCount(): Int = notes.size
+
+    fun updateList(newList: List<Note>) {
+        notes = newList
+        selectedPosition = -1
+        notifyDataSetChanged()
+    }
+}
+
+4. File Manager
+package com.notas.app
+
+import android.content.ContentValues
+import android.content.Context
+import android.provider.MediaStore
+import java.io.File
+
+object FileManager {
+
+    fun saveInternal(context: Context, note: Note) {
+        val file = File(context.filesDir, "${note.title}.txt")
+        file.writeText(note.content)
+    }
+
+    fun saveExternalApp(context: Context, note: Note) {
+        val dir = context.getExternalFilesDir("notes") ?: context.filesDir
+        val file = File(dir, "${note.title}.txt")
+        file.writeText(note.content)
+    }
+
+    fun delete(context: Context, note: Note) {
+        val file1 = File(context.filesDir, "${note.title}.txt")
+        val file2 = File(context.getExternalFilesDir("notes") ?: context.filesDir, "${note.title}.txt")
+
+        if (file1.exists()) file1.delete()
+        if (file2.exists()) file2.delete()
+    }
+
+    fun getNotes(context: Context): List<Note> {
+        val dir = context.filesDir
+
+        return dir.listFiles()?.map {
+            Note(
+                title = it.nameWithoutExtension,
+                content = it.readText()
+            )
+        } ?: emptyList()
+    }
+
+    fun exportToDownloads(context: Context, note: Note) {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, "${note.title}.txt")
+            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+        }
+
+        val uri = context.contentResolver.insert(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+            values
+        )
+
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.use { stream ->
+                stream.write(note.content.toByteArray())
+            }
+        }
+    }
+}
+
+5. XML<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Switch
+        android:id="@+id/switchStorage"
+        android:text="Usar almacenamiento externo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/titleInput"
+        android:hint="Título"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/contentInput"
+        android:hint="Contenido"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnSave"
+        android:text="Guardar nota"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:text="Borrar seleccionada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnExportInternal"
+        android:text="Exportar interno"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnExportExternal"
+        android:text="Exportar externo (app)"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnExportDownloads"
+        android:text="Exportar a Downloads"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>
